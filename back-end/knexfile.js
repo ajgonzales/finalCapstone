@@ -4,7 +4,7 @@
  * You will not need to make changes to this file.
  */
 
-require('dotenv').config();
+require("dotenv").config();
 const path = require("path");
 
 const {
@@ -19,7 +19,7 @@ module.exports = {
   development: {
     client: "postgresql",
     pool: { min: 1, max: 5 },
-    connection: DATABASE_URL,
+    connection: DATABASE_URL_DEVELOPMENT,
     migrations: {
       directory: path.join(__dirname, "src", "db", "migrations"),
     },
