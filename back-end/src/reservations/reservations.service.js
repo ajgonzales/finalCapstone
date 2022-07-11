@@ -1,22 +1,28 @@
 const knex = require("../db/connection");
+const table = "reservations";
 
-function list(date) {
-  return knex("reservations")
+async function create(reservation) {
+  return knex(table)
+    .insert(reservation)
+    .returning("*")
+    .then((created) => created[0]);
+}
+
+async function read(reservation_id) {
+  return knex(table).select("*").where({ reservation_id }).first();
+}
+
+async function listByDate(reservation_date) {
+  return knex(table)
     .select("*")
-    .where({ reservation_date: date })
-    .andWhereNot({ status: "finished" })
+    .where({ reservation_date })
+    .whereNot({ status: "finished" })
+    .whereNot({ status: "cancelled" })
     .orderBy("reservation_time");
 }
 
-function create(newReservation) {
-  return knex("reservations")
-    .insert(newReservation)
-    .returning("*")
-    .then((newData) => newData[0]);
-}
-
-function search(mobile_number) {
-  return knex("reservations")
+async function listByNumber(mobile_number) {
+  return knex(table)
     .whereRaw(
       "translate(mobile_number, '() -', '') like ?",
       `%${mobile_number.replace(/\D/g, "")}%`
@@ -24,31 +30,25 @@ function search(mobile_number) {
     .orderBy("reservation_date");
 }
 
-function read(reservation_id) {
-  return knex("reservations").select("*").where({ reservation_id }).first();
-}
-
-function statusUpdate(reservation) {
-  return knex("reservations")
-    .select("*")
+async function update(reservation) {
+  return knex(table)
     .where({ reservation_id: reservation.reservation_id })
-    .update({ status: reservation.status }, "*")
-    .then((updatedReservation) => updatedReservation[0]);
+    .update(reservation, "*")
+    .then((updated) => updated[0]);
 }
 
-function update(updatedReservation) {
-  return knex("reservations")
-    .select("*")
-    .where({ reservation_id: updatedReservation.reservation_id })
-    .update(updatedReservation, "*")
+async function updateStatus(reservation_id, status) {
+  return knex(table)
+    .where({ reservation_id })
+    .update({ status }, "*")
     .then((updated) => updated[0]);
 }
 
 module.exports = {
-  list,
   create,
+  listByDate,
+  listByNumber,
   read,
-  statusUpdate,
-  search,
   update,
+  updateStatus,
 };

@@ -1,54 +1,56 @@
-const { table } = require("../db/connection");
 const knex = require("../db/connection");
+
+async function read(tableId) {
+  return knex(table).select("*").where({ table_id: tableId }).first();
+}
 
 function list() {
   return knex("tables").select("*").orderBy("table_name");
-}
-
-function read(table_id) {
-  return knex("tables").select("*").where({ table_id }).first();
 }
 
 function create(table) {
   return knex("tables")
     .insert(table)
     .returning("*")
-    .then((createdTable) => createdTable[0]);
+    .then((createdTables) => createdTables[0]);
 }
 
-function update(table_id, reservation_id) {
-  return knex.transaction(async (trx) => {
-    await trx("reservations")
-      .where({ reservation_id })
-      .update({ status: "seated" });
-
-    return await knex("tables")
-      .select("*")
-      .where({ table_id })
-      .update({ reservation_id })
-      .then((updatedTable) => updatedTable[0])
-      .catch(console.log);
-  });
+function update(tableId, reservation_id = null) {
+  return knex("tables")
+    .select("*")
+    .where({ table_id: tableId })
+    .update({ reservation_id: reservation_id ? reservation_id : null });
 }
 
-function finish(table_id, reservation_id) {
-  return knex.transaction(async (trx) => {
-    await trx("reservations")
-      .where({ reservation_id })
-      .update({ status: "finished" });
-
-    return trx("tables")
-      .select("*")
-      .where({ table_id })
-      .update({ reservation_id: null }, "*")
-      .then((finishedTable) => finishedTable[0])
-      .catch(console.log);
-  });
+function getTable(tableId) {
+  return knex("tables").select("*").where({ table_id: tableId }).first();
 }
+
+function getReservation(reservation_id) {
+  return knex("reservations")
+    .select("*")
+    .where({ reservation_id: reservation_id })
+    .first();
+}
+
+function changeStatus(reservation_id, newStatus) {
+  return knex("reservations")
+    .select("*")
+    .where({ reservation_id: reservation_id })
+    .update({ status: newStatus });
+}
+
+function destroy(tableId) {
+  return knex("tables").where({ table_id: tableId }).del();
+}
+
 module.exports = {
-  list,
   read,
+  list,
   create,
   update,
-  finish,
+  getTable,
+  getReservation,
+  changeStatus,
+  delete: destroy,
 };
